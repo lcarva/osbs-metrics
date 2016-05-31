@@ -115,7 +115,7 @@ class Build(object):
         logger.info("Sending zero data")
         with NamedTemporaryFile(delete=True) as temp_zabbix_data:
             for k, v in zabbix_result.iteritems():
-                if k not in ['concurrent', 'pulp_push_speed']:
+                if k not in ['concurrent', 'pulp_push_speed', 'name', 'phase', 'state']:
                     temp_zabbix_data.write("- %s 0\n" % k)
             temp_zabbix_data.flush()
 
