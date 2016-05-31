@@ -148,7 +148,14 @@ def _send_zabbix_message(zabbix_host, osbs_master, key, value, print_command=Tru
 def filter_completed_builds(completed_builds):
     # Remove all completed_builds which are not within this hour
     now = int(time())
-    return {k: v for k, v in completed_builds.items() if (v - now) < 3600}
+    result = {}
+    for k, v in completed_builds.items():
+        try:
+            if int(v - now) < 3600:
+                result.update({k: v})
+        except:
+            pass
+    return result
 
 
 def heartbeat(zabbix_host, osbs_master):
@@ -185,6 +192,7 @@ def run(zabbix_host, osbs_master, config, instance):
             except Exception as e:
                 logger.warn("Error while parsing json '%s': %s", line, repr(e))
                 continue
+
             if status == 'Pending':
                 if build_name not in pending.keys():
                     pending[build_name] = int(time())

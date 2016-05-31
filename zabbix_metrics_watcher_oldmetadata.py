@@ -221,7 +221,14 @@ def _send_zabbix_message(zabbix_host, osbs_master, key, value, print_command=Tru
 def filter_completed_builds(completed_builds):
     # Remove all completed_builds which are not within this hour
     now = int(time())
-    return {k: v for k, v in completed_builds.items() if (v - now) < 3600}
+    result = {}
+    for k, v in completed_builds.items():
+        try:
+            if int(v - now) < 3600:
+                result.update({k: v})
+        except:
+            pass
+    return result
 
 
 def heartbeat(zabbix_host, osbs_master):
