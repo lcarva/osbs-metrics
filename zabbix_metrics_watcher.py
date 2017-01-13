@@ -187,7 +187,10 @@ def filter_completed_builds(completed_builds):
 
 
 def run(zabbix_host, osbs_master, config, instance):
+    STUCK_IN_NEW_THRESHOLD_SECS = 5
+
     running_builds = set()
+    builds_in_new = {}
     pending = set()
     completed_builds = {}
 
@@ -214,8 +217,24 @@ def run(zabbix_host, osbs_master, config, instance):
 
             logger.info("Found build %s in %s", build_name, status)
             build = Build(build_name, cmd_base)
-            if status == 'Pending':
+            if status == 'New':
+                now = datetime.datetime.now()
+                builds_in_new.setdefault(build_name, now)
+
+            elif status != 'New':
+                try:
+                    del builds_in_new[build_name]
+
+                    # We should reset zabbix item only when the last build in New
+                    # has changed its state
+                    if not builds_in_new:
+                        _send_zabbix_message(zabbix_host, osbs_master, "new_duration", 0)
+                except KeyError:
+                    pass
+
+            elif status == 'Pending':
                 pending.add(build_name)
+
             elif status == 'Running' and changeset in ['added', 'modified']:
                 if build_name in pending:
                     pending_duration = int((build.started_time - build.created_time).total_seconds())
@@ -232,6 +251,15 @@ def run(zabbix_host, osbs_master, config, instance):
                     logger.warn("Error while removing running build: %r", e)
             else:
                 logging.warn("Unhandled status: %r", status)
+
+            spent_in_new = [(now - start).total_seconds() for start in builds_in_new.values()]
+            if spent_in_new:
+                max_spent_in_new = max(spent_in_new)
+                if max_spent_in_new > STUCK_IN_NEW_THRESHOLD_SECS:
+                    logger.info("%s build(s) are in New for, longest: %s sec",
+                                len(builds_in_new), max_spent_in_new)
+                    _send_zabbix_message(zabbix_host, osbs_master,
+                                         "new_duration", max_spent_in_new)
 
             build.send_zabbix_notification(zabbix_host, osbs_master, len(running_builds))
 
