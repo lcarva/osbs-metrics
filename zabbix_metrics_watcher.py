@@ -222,6 +222,8 @@ def run(zabbix_host, osbs_master, config, instance):
                     _send_zabbix_message(zabbix_host, osbs_master, "pending", pending_duration)
                     logger.info("Pending duration: %s", pending_duration)
                     running_builds.add(build_name)
+                pending.discard(build_name)
+
             elif (status in ['Running'] and changeset == 'deleted')\
               or (status in ['Complete', 'Failed', 'Cancelled']):
                 try:
