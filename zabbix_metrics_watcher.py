@@ -17,6 +17,25 @@ formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(messag
 ch.setFormatter(formatter)
 logger.addHandler(ch)
 
+"""
+Check the output of 'osbs watch-builds' and send messages to zabbix
+
+Zabbix Items (generally sent when a build changes a state):
+ * new_duration - maximum time any current build spent in New state
+ * pending - amount of time last build has spent in Pending state
+ * throughput - number of build which successfully completed during last hour
+ * concurrent - number of running builds when some build has changed state
+ * name - build name
+ * phase - name of the phase this build is in
+ * state - 0 for any in progress state, 1 for complete (Complete / Failed / Cancelled)
+ * <atomic-reactor plugin name> - how long did each plugin took to complete
+ * <
+ * pulp_push_speed - average speed of pulp push (or pulp_sync if pulp_push wasn't performed)
+ * upload_size_mb - size of the image uploaded to koji
+
+The data are stored in a plain table and can be linked together by a unique timestamp only
+"""
+
 
 class Build(object):
     def __init__(self, build_name, cmd_base, data=None):
