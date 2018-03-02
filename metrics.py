@@ -158,6 +158,7 @@ class Builds(object):
             if state == 'Complete':
                 # Count this towards throughput
                 tput = tputmodel.append(completion)
+                upload_size_mb = 'nan'
 
                 if which == 'current':
                     annotations = build['metadata'].get('annotations', {})
@@ -242,7 +243,7 @@ class Builds(object):
             'missing-log': missing,
         }
 
-        
+
 def run(inputfile=None, instance=None):
     if inputfile is not None:
         with open(inputfile) as fp:
